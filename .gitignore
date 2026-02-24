@@ -11,6 +11,8 @@ venv/
 .venv/
 env/
 ENV/
+.env
+.env.*
 
 # Variables de entorno
 .env
