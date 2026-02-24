@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+import uuid
 
 
 class Tarea(models.Model):
@@ -31,7 +32,7 @@ class Tarea(models.Model):
     class Meta:
         verbose_name = "Tarea"
         verbose_name_plural = "Tareas"
-        ordering = ["-prioridad", "fecha_limite"]
+        ordering = ["fecha_limite"]
 
     def clean(self):
         if not self.titulo or not self.titulo.strip():
@@ -47,3 +48,22 @@ class Tarea(models.Model):
 
     def __str__(self):
         return f"{self.titulo} ({self.prioridad})"
+
+
+class ConfirmacionCorreo(models.Model):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="confirmaciones_correo",
+        verbose_name="Usuario",
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    usado = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Confirmación de correo"
+        verbose_name_plural = "Confirmaciones de correo"
+
+    def __str__(self):
+        return f"Confirmación {self.usuario_id} - {self.token}"

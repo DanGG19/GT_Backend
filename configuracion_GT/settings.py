@@ -1,13 +1,40 @@
 from pathlib import Path
 from datetime import timedelta
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "cambia-esta-clave-en-produccion"
-DEBUG = True
+# =========================
+# CARGA DE VARIABLES .env
+# =========================
+env = environ.Env(
+    DEBUG=(bool, False),
+)
 
-ALLOWED_HOSTS = ["*"]
+# Lee .env en la raíz del proyecto (GT_Backend/.env)
+environ.Env.read_env(BASE_DIR / ".env")
 
+
+# =========================
+# CONFIG GENERAL
+# =========================
+SECRET_KEY = env("CLAVE_SECRETA_DJANGO", default="cambia-esta-clave-en-produccion")
+DEBUG = env.bool("DEBUG", default=True)
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+
+LANGUAGE_CODE = "es-sv"
+TIME_ZONE = "America/El_Salvador"
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = "static/"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# =========================
+# APLICACIONES
+# =========================
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -26,17 +53,27 @@ INSTALLED_APPS = [
     "tareas",
 ]
 
+
+# =========================
+# MIDDLEWARE
+# =========================
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
+# =========================
+# URLS / WSGI
+# =========================
 ROOT_URLCONF = "configuracion_GT.urls"
 
 TEMPLATES = [
@@ -56,6 +93,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "configuracion_GT.wsgi.application"
 
+
+# =========================
+# BASE DE DATOS
+# =========================
+# (Manteniendo SQLite para el proyecto)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -63,6 +105,10 @@ DATABASES = {
     }
 }
 
+
+# =========================
+# VALIDADORES DE PASSWORD
+# =========================
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -70,17 +116,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "es-sv"
-TIME_ZONE = "America/El_Salvador"
-USE_I18N = True
-USE_TZ = True
-
-STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 # =========================
-# DRF + JWT (TODO en español)
+# DRF + JWT
 # =========================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -94,6 +132,9 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
         "rest_framework.filters.SearchFilter",
     ),
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
 }
 
 SIMPLE_JWT = {
@@ -104,8 +145,35 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
 
+# =========================
+# CORS
+# =========================
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+)
+
+
+# =========================
+# URLS PARA CONFIRMACIÓN
+# =========================
+URL_CONFIRMACION_BASE = env("URL_CONFIRMACION_BASE", default="http://127.0.0.1:8000")
+URL_FRONTEND = env("URL_FRONTEND", default="http://localhost:5173")
+
+
+# =========================
+# CONFIGURACIÓN DE CORREOS (Gmail SMTP)
+# =========================
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL",
+    default=f"GT Tareas Admin <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "GT Tareas Admin <no-reply@gt.local>",
+)
